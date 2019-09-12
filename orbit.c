@@ -301,7 +301,7 @@ int main(int argc, char **argv) {
      }
 
      fgets(line,sizeof(line),infile);   // read/discard 1st line from file
-     for (i=0;  i<COMETCOUNT; i++) {          // read & enter asteroids up to ASTCOUNT
+     for (i=0;  i<COMETCOUNT; i++) {          // read & enter comets up to COMETCOUNT
           fgets(line,sizeof(line),infile);
           if (line[strlen(line)-1]=='\n') line[strlen(line)-1]='\0';
           sscanf(line," %s %d %f %f %f %f %f %f %f %f %s %d", \
