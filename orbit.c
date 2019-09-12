@@ -14,6 +14,10 @@
  * With a speed of 6.0, simulation time is appx 3 1/2 days per second of real time.
  * With a zoom factor of 200 you will see to almost the orbit of Jupiter (about 4 A.U.).
  * 
+ * On the display, the central object is the Sun. The planets are slightly smaller white points.
+ * Asteroids are variable bright white to gray points. Comets are blueish points. 
+ * 
+ * 
 
 ==================================================================================================================
 
@@ -103,6 +107,7 @@ Planetary orbital elements for the major planets
 #include <unistd.h>
 #include <math.h>
 #include <string.h>
+#include <signal.h>
 
 
 #define ASTCOUNT 60000   // Number of imported asteroids (starting from 1)
@@ -110,13 +115,27 @@ Planetary orbital elements for the major planets
 #define SPEED 5.0       // simulation speed. Smaller #'s (down to 1.0) are faster, larger (up to 10.0) are slower
 #define OBJCOUNT ASTCOUNT+COMETCOUNT+50      // Number of imported objects (50 is max number of hand-imported objects)
 
-/* Global Variables */
+// Global Variables
 int fbfd = 0;
 struct fb_var_screeninfo vinfo;
 struct fb_fix_screeninfo finfo;
 long int screensize = 0;
-char *fbp = 0;
-long int location = 0;
+char *fbp = 0;           // frame buffer pointer
+long int location = 0;   // used for plotting
+int EXITFLAG = 0;        // 0 until ctrl-c/SIGTERM caught
+int exit_signal = 0;     // 0 until ctrl-c/SIGTERM caught
+
+// SIGTERM caught - exit gracefully
+void termination_handler (int signum) {
+     EXITFLAG = 1;
+     exit_signal = 1;
+}
+
+// ctrl-c sig handler
+void ctrlc_handler (int signum) {
+     EXITFLAG = 1;
+     exit_signal = 1;
+}
 
 
 // Clear the frame buffer (set everything to black)
@@ -252,6 +271,12 @@ int main(int argc, char **argv) {
           ZOOM = 220;    // 220 is appx 4 A.U. in diameter, just inside Jupiters orbit
      }
 
+     // sig handler (catch ctrl-c for graceful closing)
+     if (signal (SIGINT, ctrlc_handler) == SIG_IGN) {
+          signal(SIGINT, SIG_IGN);
+     }
+
+
      cnt = 0;
      
      // Predefine major bodies
@@ -266,6 +291,8 @@ int main(int argc, char **argv) {
      a[cnt] = 30.06896; e[cnt] = 0.0086; node[cnt] = 304.88; mag[cnt] = 0; bodysize[cnt] = 1; cnt++; // Neptune
      a[cnt] = 39.4817; e[cnt] = 0.2488; node[cnt] = 238.928; mag[cnt] = 0; bodysize[cnt] = 1; cnt++; // Pluto
  
+     // If you want to play with orbital patterns you can add objects below (max 40)
+     //a[cnt] = 1.5; e[cnt] = .65; node[cnt] = 0.0; mag[cnt] = 0; bodysize[cnt] = 1; cnt++;     // test object 1
  
      // ***** read in asteroid file *****
      infile = fopen("ELEMENTS.NUMBR","r");
@@ -391,12 +418,15 @@ int main(int argc, char **argv) {
 
           }
           
-          //usleep(30000);  // time between updates
+          // test ctrl-c and SIGINT
+          if (EXITFLAG == 1) break;
+          //usleep(3000);  // time between updates (used during testing)
          
      }
      
       /* Done with program - clean up */
 
+    fprintf(stderr,"Shutting down %s\n",argv[0]);
     clear();	               // clear the display before closing
     free(a);                  // free up memory
     free(e);
@@ -405,6 +435,7 @@ int main(int argc, char **argv) {
     free(bodysize);
     munmap(fbp, screensize);  // freeup the screen memory
     close(fbfd);              // close the frame buffer pointer
+    fprintf(stderr,"Program exited\n");
     return 0;
 }
           
