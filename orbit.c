@@ -375,7 +375,7 @@ int main(int argc, char **argv) {
           
           // update object position
           //Normal: period = sqrt(pow(a[cnt],3));
-          // but when e is > 0 this doesm't apply. r is the true a so we apply that:
+          // but when e is > 0 this doesn't apply. r is the true a so we apply that:
           r = ((a[cnt])*(1-e[cnt]*e[cnt])) / (1+e[cnt]*cos(node[cnt] * 0.01745));
           period = sqrt(pow(r,3));
           node[cnt] += 1.0/(period * SPEED); // if SPEED=1.0 there is no delay
